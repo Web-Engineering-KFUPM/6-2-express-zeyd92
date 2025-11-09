@@ -136,22 +136,54 @@ import "./index.css";
 
 function App() {
   const [quote, setQuote] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const fetchQuote = async () => {
-    const res = await fetch("http://localhost:3000/api/quote");
-    const data = await res.json();
-    setQuote(data.quote);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("http://localhost:3000/api/quote");
+
+      if (!res.ok) {
+        throw new Error(`Server error: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Ensure response contains a string
+      if (!data || typeof data.quote !== "string") {
+        throw new Error("Invalid response format");
+      }
+
+      setQuote(data.quote);
+    } catch (err) {
+      console.error("Error fetching quote:", err);
+      setError("⚠️ Could not fetch quote. Please try again later.");
+      setQuote("");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="app">
       <div className="card">
         <h1 className="title">Random Quote Generator</h1>
-        <button className="btn" onClick={fetchQuote}>
-          Get Quote
+
+        <button className="btn" onClick={fetchQuote} disabled={loading}>
+          {loading ? "Loading..." : "Get Quote"}
         </button>
+
         <div className="quote-box">
-          {quote ? <p className="quote">{quote}</p> : <p className="placeholder">Click the button to get a quote</p>}
+          {error ? (
+            <p className="error">{error}</p>
+          ) : quote ? (
+            <p className="quote">{quote}</p>
+          ) : (
+            <p className="placeholder">Click the button to get a quote</p>
+          )}
         </div>
       </div>
     </div>
@@ -159,3 +191,4 @@ function App() {
 }
 
 export default App;
+
